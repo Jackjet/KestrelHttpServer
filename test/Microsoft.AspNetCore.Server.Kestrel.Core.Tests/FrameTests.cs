@@ -33,7 +33,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
         private readonly TestFrame<object> _frame;
         private readonly ServiceContext _serviceContext;
         private readonly FrameContext _frameContext;
-        private readonly PipeFactory _pipelineFactory;
+        private readonly PipeFactory _pipeFactory;
         private ReadCursor _consumed;
         private ReadCursor _examined;
 
@@ -52,8 +52,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
 
         public FrameTests()
         {
-            _pipelineFactory = new PipeFactory();
-            _input = _pipelineFactory.Create();
+            _pipeFactory = new PipeFactory();
+            _input = _pipeFactory.Create();
 
             _serviceContext = new TestServiceContext();
 
@@ -78,7 +78,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
         {
             _input.Reader.Complete();
             _input.Writer.Complete();
-            _pipelineFactory.Dispose();
+            _pipeFactory.Dispose();
         }
 
         [Fact]
@@ -277,7 +277,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
         {
             // Arrange
             var messageBody = MessageBody.For(Kestrel.Core.Internal.Http.HttpVersion.Http11, (FrameRequestHeaders)_frame.RequestHeaders, _frame);
-            _frame.InitializeStreams(new RequestBodyReader(messageBody));
+            var requestBodyReader = new RequestBodyReader(messageBody, _pipeFactory.Create());
+            _frame.InitializeStreams(requestBodyReader);
 
             var originalRequestBody = _frame.RequestBody;
             var originalResponseBody = _frame.ResponseBody;
@@ -285,7 +286,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
             _frame.ResponseBody = new MemoryStream();
 
             // Act
-            _frame.InitializeStreams(new RequestBodyReader(messageBody));
+            _frame.InitializeStreams(requestBodyReader);
 
             // Assert
             Assert.Same(originalRequestBody, _frame.RequestBody);

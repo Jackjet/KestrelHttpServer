@@ -51,6 +51,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
 
         private Streams _frameStreams;
         protected readonly RequestBodyReader _requestBodyReader;
+        protected readonly IPipe _requestBodyPipe;
 
         protected Stack<KeyValuePair<Func<object, Task>, object>> _onStarting;
         protected Stack<KeyValuePair<Func<object, Task>, object>> _onCompleted;
@@ -64,6 +65,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
         protected RequestProcessingStatus _requestProcessingStatus;
         protected bool _keepAlive;
         protected bool _upgrade;
+        protected bool _hasRequestBody;
         private bool _canHaveBody;
         private bool _autoChunk;
         protected Exception _applicationException;
@@ -99,7 +101,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
             _keepAliveTicks = ServerOptions.Limits.KeepAliveTimeout.Ticks;
             _requestHeadersTimeoutTicks = ServerOptions.Limits.RequestHeadersTimeout.Ticks;
 
-            _requestBodyReader = new RequestBodyReader(CreateRequestBodyPipe());
+            _requestBodyPipe = CreateRequestBodyPipe();
+            _requestBodyReader = new RequestBodyReader(_requestBodyPipe);
         }
 
         public ServiceContext ServiceContext => _frameContext.ServiceContext;
@@ -344,6 +347,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
 
             _requestProcessingStatus = RequestProcessingStatus.RequestPending;
             _keepAlive = false;
+            _upgrade = false;
+            _hasRequestBody = false;
             _autoChunk = false;
             _applicationException = null;
 

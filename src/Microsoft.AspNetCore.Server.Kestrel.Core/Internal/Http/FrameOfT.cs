@@ -215,11 +215,6 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
                     if (!_requestProcessingStopping)
                     {
                         Reset();
-
-                        if (_hasRequestBody)
-                        {
-                            _requestBodyReader.Reset();
-                        }
                     }
                 }
             }

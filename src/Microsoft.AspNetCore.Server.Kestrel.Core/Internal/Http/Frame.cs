@@ -50,6 +50,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
         private readonly object _onCompletedSync = new Object();
 
         private Streams _frameStreams;
+        protected readonly RequestBodyReader _requestBodyReader;
 
         protected Stack<KeyValuePair<Func<object, Task>, object>> _onStarting;
         protected Stack<KeyValuePair<Func<object, Task>, object>> _onCompleted;
@@ -97,6 +98,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
             FrameControl = this;
             _keepAliveTicks = ServerOptions.Limits.KeepAliveTimeout.Ticks;
             _requestHeadersTimeoutTicks = ServerOptions.Limits.RequestHeadersTimeout.Ticks;
+
+            _requestBodyReader = new RequestBodyReader(CreateRequestBodyPipe());
         }
 
         public ServiceContext ServiceContext => _frameContext.ServiceContext;
@@ -315,14 +318,14 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
             ResponseHeaders = FrameResponseHeaders;
         }
 
-        public void InitializeStreams(RequestBodyReader requestBodyReader)
+        public void InitializeStreams(bool requestUpgrade)
         {
             if (_frameStreams == null)
             {
                 _frameStreams = new Streams(this);
             }
 
-            (RequestBody, ResponseBody) = _frameStreams.Start(requestBodyReader);
+            (RequestBody, ResponseBody) = _frameStreams.Start(_requestBodyReader, requestUpgrade);
         }
 
         public void PauseStreams() => _frameStreams.Pause();
@@ -390,6 +393,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
 
             _responseBytesWritten = 0;
             _requestCount++;
+
+            _requestBodyReader.Reset();
         }
 
         /// <summary>
@@ -1461,7 +1466,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
             }
         }
 
-        protected IPipe CreateRequestBodyPipe()
+        private IPipe CreateRequestBodyPipe()
             => ConnectionInformation.PipeFactory.Create(new PipeOptions
             {
                 ReaderScheduler = ServiceContext.ThreadPool,

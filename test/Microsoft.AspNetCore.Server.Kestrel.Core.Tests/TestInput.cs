@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Core.Tests.TestHelpers;
 using Microsoft.AspNetCore.Server.Kestrel.Internal.System.IO.Pipelines;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions;
 using Microsoft.AspNetCore.Testing;
@@ -21,13 +22,21 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
 
         public TestInput()
         {
-            var innerContext = new FrameContext { ServiceContext = new TestServiceContext() };
+            _pipeFactory = new PipeFactory();
+
+            var innerContext = new FrameContext
+            {
+                ServiceContext = new TestServiceContext(),
+                ConnectionInformation = new MockConnectionInformation
+                {
+                    PipeFactory = _pipeFactory
+                }
+            };
 
             FrameContext = new Frame<object>(null, innerContext);
             FrameContext.FrameControl = this;
 
             _memoryPool = new MemoryPool();
-            _pipeFactory = new PipeFactory();
             Pipe = _pipeFactory.Create();
             FrameContext.Input = Pipe.Reader;
         }

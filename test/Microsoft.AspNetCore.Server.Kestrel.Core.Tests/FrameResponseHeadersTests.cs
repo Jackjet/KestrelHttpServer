@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Core.Tests.TestHelpers;
+using Microsoft.AspNetCore.Server.Kestrel.Internal.System.IO.Pipelines;
 using Microsoft.AspNetCore.Testing;
 using Microsoft.Extensions.Primitives;
 using Xunit;
@@ -19,7 +21,11 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
         {
             var frameContext = new FrameContext
             {
-                ServiceContext = new TestServiceContext()
+                ServiceContext = new TestServiceContext(),
+                ConnectionInformation = new MockConnectionInformation
+                {
+                    PipeFactory = new PipeFactory()
+                }
             };
 
             var frame = new Frame<object>(application: null, frameContext: frameContext);
@@ -58,14 +64,14 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
         [InlineData("Ser\u0080ver", "Data")]
         [InlineData("Server", "Da\u0080ta")]
         [InlineData("Unknown\u0080-Header", "Data")]
-        [InlineData("Ser™ver", "Data")]
-        [InlineData("Server", "Da™ta")]
-        [InlineData("Unknown™-Header", "Data")]
-        [InlineData("Ser™ver", "Data")]
-        [InlineData("šerver", "Data")]
-        [InlineData("Server", "Dašta")]
-        [InlineData("Unknownš-Header", "Data")]
-        [InlineData("Seršver", "Data")]
+        [InlineData("Serï¿½ver", "Data")]
+        [InlineData("Server", "Daï¿½ta")]
+        [InlineData("Unknownï¿½-Header", "Data")]
+        [InlineData("Serï¿½ver", "Data")]
+        [InlineData("ï¿½erver", "Data")]
+        [InlineData("Server", "Daï¿½ta")]
+        [InlineData("Unknownï¿½-Header", "Data")]
+        [InlineData("Serï¿½ver", "Data")]
         public void AddingControlOrNonAsciiCharactersToHeadersThrows(string key, string value)
         {
             var responseHeaders = new FrameResponseHeaders();

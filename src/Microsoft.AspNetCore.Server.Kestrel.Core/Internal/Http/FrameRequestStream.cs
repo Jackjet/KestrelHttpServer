@@ -12,7 +12,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
 {
     internal class FrameRequestStream : ReadOnlyStream
     {
-        private RequestBodyReader _requestBodyReader;
+        private IRequestBodyReader _requestBodyReader;
         private FrameStreamState _state;
         private Exception _error;
 
@@ -131,7 +131,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
             return task;
         }
 
-        public void StartAcceptingReads(RequestBodyReader requestBodyReader)
+        public void StartAcceptingReads(IRequestBodyReader requestBodyReader)
         {
             // Only start if not aborted
             if (_state == FrameStreamState.Closed)

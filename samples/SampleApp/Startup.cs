@@ -21,11 +21,6 @@ namespace SampleApp
 
             app.Run(async context =>
             {
-                var connectionFeature = context.Connection;
-                logger.LogDebug($"Peer: {connectionFeature.RemoteIpAddress?.ToString()}:{connectionFeature.RemotePort}"
-                    + $"{Environment.NewLine}"
-                    + $"Sock: {connectionFeature.LocalIpAddress?.ToString()}:{connectionFeature.LocalPort}");
-
                 var response = $"hello, world{Environment.NewLine}";
                 context.Response.ContentLength = response.Length;
                 context.Response.ContentType = "text/plain";
@@ -55,13 +50,13 @@ namespace SampleApp
                         // Uncomment the following to enable Nagle's algorithm for this endpoint.
                         //listenOptions.NoDelay = false;
 
-                        listenOptions.UseConnectionLogging();
+                        //listenOptions.UseConnectionLogging();
                     });
 
                     options.Listen(IPAddress.Loopback, 5001, listenOptions =>
                     {
                         listenOptions.UseHttps("testCert.pfx", "testPassword");
-                        listenOptions.UseConnectionLogging();
+                        //listenOptions.UseConnectionLogging();
                     });
 
                     options.UseSystemd();

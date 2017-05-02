@@ -46,16 +46,17 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Https
         public async Task<IAdaptedConnection> OnConnectionAsync(ConnectionAdapterContext context)
         {
             SslStream sslStream;
+            H2Stream h2Stream = new H2Stream(context.ConnectionStream);
             bool certificateRequired;
 
             if (_options.ClientCertificateMode == ClientCertificateMode.NoCertificate)
             {
-                sslStream = new SslStream(context.ConnectionStream);
+                sslStream = new SslStream(h2Stream);
                 certificateRequired = false;
             }
             else
             {
-                sslStream = new SslStream(context.ConnectionStream, leaveInnerStreamOpen: false,
+                sslStream = new SslStream(h2Stream, leaveInnerStreamOpen: false,
                     userCertificateValidationCallback: (sender, certificate, chain, sslPolicyErrors) =>
                     {
                         if (certificate == null)
@@ -95,6 +96,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Https
             {
                 await sslStream.AuthenticateAsServerAsync(_options.ServerCertificate, certificateRequired,
                         _options.SslProtocols, _options.CheckCertificateRevocation);
+                _logger?.LogDebug($"h2: {h2Stream.HasH2}");
             }
             catch (IOException ex)
             {
